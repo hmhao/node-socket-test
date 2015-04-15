@@ -1,7 +1,6 @@
-package io.socket.flash
-{
+package io.socket.flash {
 	import com.adobe.serialization.json.JSON;
-
+	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
@@ -11,42 +10,35 @@ package io.socket.flash
 	import flash.net.URLRequest;
 	import flash.utils.unescapeMultiByte;
 	import flash.utils.ByteArray;
-
-	public class BaseSocketIOTransport extends EventDispatcher implements ISocketIOTransport
-	{
-        protected var _hostname:String;
+	
+	public class BaseSocketIOTransport extends EventDispatcher implements ISocketIOTransport {
+		protected var _hostname:String;
 		public static const FRAME:String = "\ufffd";
 		public static const SEPARATOR:String = ":";
 		public static const EIO:String = "3";
 		private var _connectLoader:URLLoader;
 		protected var _sessionId:String;
-
-		public function BaseSocketIOTransport(hostname:String = "")
-		{
+		
+		public function BaseSocketIOTransport(hostname:String = "") {
 			_hostname = hostname;
 		}
-
-        public function get sessionId():String
-        {
-            return _sessionId;
-        }
-
-		public function get hostname():String
-		{
+		
+		public function get sessionId():String {
+			return _sessionId;
+		}
+		
+		public function get hostname():String {
 			return _hostname;
 		}
-
-		public function send(message:Object):void
-		{
+		
+		public function send(message:Object):void {
 		}
-
-		protected function sendPacket(packet:Packet):void
-		{
-
+		
+		protected function sendPacket(packet:Packet):void {
+		
 		}
-
-		public function connect():void
-		{
+		
+		public function connect():void {
 			var urlLoader:URLLoader = new URLLoader();
 			var urlRequest:URLRequest = new URLRequest(hostname + "/?EIO=" + EIO + "&transport=polling&t=" + currentMills());
 			urlLoader.addEventListener(Event.COMPLETE, onConnectedComplete);
@@ -60,8 +52,8 @@ package io.socket.flash
 		private function decodePayloadAsBinary(byteArray:ByteArray):String {
 			var ba:ByteArray = byteArray;
 			var isString:Boolean = ba[0] === 0;
-			var dataLength:String = '';
-			var data:String = '';
+			var dataLength:String = "";
+			var data:String = "";
 			var byte:int;
 			
 			ba.position = 1;
@@ -81,9 +73,8 @@ package io.socket.flash
 			}
 			return data;
 		}
-
-		private function onConnectedComplete(event:Event):void
-		{
+		
+		private function onConnectedComplete(event:Event):void {
 			var data:String = decodePayloadAsBinary(_connectLoader.data);
 			data = data.substring(1);
 			var json:Object = JSON.decode(data);
@@ -91,8 +82,7 @@ package io.socket.flash
 			_sessionId = json.sid;
 			_connectLoader.close();
 			_connectLoader = null;
-			if (_sessionId == null)
-			{
+			if (_sessionId == null) {
 				// Invalid request
 				var errorEvent:SocketIOErrorEvent = new SocketIOErrorEvent(SocketIOErrorEvent.CONNECTION_FAULT, "Invalid sessionId request");
 				dispatchEvent(errorEvent);
@@ -100,130 +90,125 @@ package io.socket.flash
 			}
 			onSessionIdRecevied(_sessionId);
 		}
-
-		protected function onSessionIdRecevied(sessionId:String):void
-		{
-
+		
+		protected function onSessionIdRecevied(sessionId:String):void {
+		
 		}
-
-		private function onConnectSecurityError(event:SecurityErrorEvent):void
-		{
+		
+		private function onConnectSecurityError(event:SecurityErrorEvent):void {
 			_connectLoader = null;
 			var socketIOErrorEvent:SocketIOErrorEvent = new SocketIOErrorEvent(SocketIOErrorEvent.SECURITY_FAULT, event.text);
 			dispatchEvent(socketIOErrorEvent);
 		}
-
-		private function onConnectIoErrorEvent(event:IOErrorEvent):void
-		{
+		
+		private function onConnectIoErrorEvent(event:IOErrorEvent):void {
 			_connectLoader = null;
 			var socketIOErrorEvent:SocketIOErrorEvent = new SocketIOErrorEvent(SocketIOErrorEvent.CONNECTION_FAULT, event.text);
 			dispatchEvent(socketIOErrorEvent);
 		}
-
-		protected function currentMills():Number
-		{
+		
+		protected function currentMills():Number {
 			return (new Date()).time;
 		}
-
-		public function disconnect():void
-		{
+		
+		public function disconnect():void {
 		}
-
-		public function processMessages(messages:Array):void
-		{
-			for each (var message:String in messages)
-			{
+		
+		public function processMessages(messages:Array):void {
+			for each (var message:String in messages) {
 				var type:String = message.charAt(0);
 				var index:int = 1;
-				// Skip messageId
-				for(index++;index < message.length;index++)
-				{
-					if (message.charAt(index) == SEPARATOR)
-					{
-						break;
-					}
-				}
-				// Skip endpoint
-				for(index++;index < message.length;index++)
-				{
-					if (message.charAt(index) == SEPARATOR)
-					{
-						break;
-					}
-				}
-				// Skip separator
-				index++;
-
 				var data:String = message.substr(index, message.length);
-				switch (type)
-				{
-					case Packet.CONNECT_TYPE:
+				switch (type) {
+					case Packet.CONNECT_TYPE: 
 						fireConnected();
 						break;
-					case Packet.HEARTBEAT_TYPE:
-						fireHeartbeat();
+					case Packet.PING_TYPE: 
+						firePing();
 						break;
-					case Packet.MESSAGE_TYPE:
+					case Packet.PONG_TYPE: 
+						firePong(data);
+						break;
+					case Packet.MESSAGE_TYPE: 
 						fireMessageEvent(data);
 						break;
-					case Packet.JSON_TYPE:
-						fireMessageEvent(com.adobe.serialization.json.JSON.decode(data));
-						break;
-					case Packet.DISCONNECT_TYPE:
+					case Packet.DISCONNECT_TYPE: 
 						disconnect();
 						return;
-					case Packet.ERROR_TYPE:
+					case Packet.ERROR_TYPE: 
 						disconnect();
-					default:
+					default: 
 				}
 			}
 		}
-
-		protected function fireConnected():void
-		{
+		
+		protected function fireConnected():void {
 			dispatchEvent(new SocketIOEvent(SocketIOEvent.CONNECT));
 		}
-
-		protected function fireHeartbeat():void
-		{
-			sendPacket(new Packet(Packet.HEARTBEAT_TYPE, null));
+		
+		protected function fireProbe():void {
+			sendPacket(new Packet(Packet.PING_TYPE, "probe"));
 		}
-
-		protected function fireMessageEvent(message:Object):void
-		{
-			var messageEvent:SocketIOEvent;
-			messageEvent = new SocketIOEvent(SocketIOEvent.MESSAGE, message);
-			dispatchEvent(messageEvent);
+		
+		protected function firePing():void {
+			sendPacket(new Packet(Packet.PING_TYPE, ""));
 		}
-
-		protected function fireDisconnectEvent():void
-		{
-			var disconnectEvent:SocketIOEvent = new SocketIOEvent(SocketIOEvent.DISCONNECT);
-			dispatchEvent(disconnectEvent);
+		
+		protected function firePong(data:String):void {
+			if (data === "probe") {
+				sendPacket(new Packet(Packet.UPGRADE_TYPE, ""));
+			}
 		}
-
-		public function decode(data:String, unescape:Boolean = false):Array{
-			if (unescape)
-			{
+		
+		protected function fireMessageEvent(message:String):void {
+			var msg:Object = Parser.decodeString(message);
+			switch (msg.type) {
+				case Parser.CONNECT: 
+					this.fireConnected();
+					break;
+				case Parser.EVENT: 
+				case Parser.BINARY_EVENT: 
+					var messageEvent:SocketIOEvent;
+					messageEvent = new SocketIOEvent(SocketIOEvent.MESSAGE, msg.data);
+					dispatchEvent(messageEvent);
+					break;
+				case Parser.ACK: 
+					//this.onack(packet);
+					break;
+				case Parser.BINARY_ACK: 
+					//this.onack(packet);
+					break;
+				case Parser.DISCONNECT: 
+					this.disconnect();
+					break;
+				case Parser.ERROR: 
+					this.disconnect();
+					break;
+			}
+		}
+		
+		protected function fireDisconnect():void {
+			dispatchEvent(new SocketIOEvent(SocketIOEvent.DISCONNECT));
+		}
+		
+		public function decode(data:String, unescape:Boolean = false):Array {
+			if (unescape) {
 				data = unescapeMultiByte(data);
 			}
-			if (data.substr(0, FRAME.length) !== FRAME)
-			{
+			if (data.substr(0, FRAME.length) !== FRAME) {
 				return [data];
 			}
-
+			
 			var messages:Array = [], number:*, n:*;
 			do {
-				if (data.substr(0, FRAME.length) !== FRAME)
-				{
+				if (data.substr(0, FRAME.length) !== FRAME) {
 					return messages;
 				}
 				data = data.substr(FRAME.length);
 				number = "", n = "";
-				for (var i:int = 0, l:int = data.length; i < l; i++)
-				{
+				for (var i:int = 0, l:int = data.length; i < l; i++) {
 					n = Number(data.substr(i, 1));
-					if (data.substr(i, 1) == n){
+					if (data.substr(i, 1) == n) {
 						number += n;
 					} else {
 						data = data.substr(number.length + FRAME.length);
@@ -233,43 +218,31 @@ package io.socket.flash
 				}
 				messages.push(data.substr(0, number));
 				data = data.substr(number);
-			} while(data !== "");
+			} while (data !== "");
 			return messages;
 		}
-
-		public function encodePackets(packets:Array):String
-		{
+		
+		public function encodePackets(packets:Array):String {
 			var ret:String = "";
-			if (packets.length == 1)
-			{
+			if (packets.length == 1) {
 				ret = encodePacket(packets[0]);
-			}
-			else
-			{
-				for each(var packet:Packet in packets)
-				{
+			} else {
+				for each (var packet:Packet in packets) {
 					var message:String = encodePacket(packet);
-					if (message != null)
-					{
+					if (message != null) {
 						ret += FRAME + message.length + FRAME + message
 					}
 				}
 			}
 			return ret;
 		};
-
-		private function encodePacket(packet:Packet):String
-		{
-			switch (packet.type)
-			{
-				case Packet.HEARTBEAT_TYPE:
-					return Packet.HEARTBEAT_TYPE + "::";
-				case Packet.MESSAGE_TYPE:
-					return Packet.MESSAGE_TYPE + ":::" + String(packet.data);
-				case Packet.JSON_TYPE:
-					return Packet.JSON_TYPE + ":::" + com.adobe.serialization.json.JSON.encode(packet.data);
-				default:
-					return "";
+		
+		private function encodePacket(packet:Packet):String {
+			switch (packet.type) {
+				case Packet.MESSAGE_TYPE: 
+					return Packet.MESSAGE_TYPE + Parser.encodeAsString({type: Parser.EVENT, data: ["message", packet.data]});
+				default: 
+					return packet.type + String(packet.data);
 			}
 		}
 	}
