@@ -1,0 +1,4 @@
+/AS3Client/obj
+/AS3Client/bin
+/AS3Client/*.as3proj
+/node_modules

@@ -1,36 +1,21 @@
-<script>
-window.onload = function() {
-    var console = {
-            output: document.getElementById('msg'),
-            log: function(msg) {
-                this.output.innerHTML += msg + '<br/>';
-            }
-        }
-        // 创建一个Socket实例
-    var socket = new WebSocket('ws://127.0.0.1:1337');
-    console.log('打开连接');
-    // 打开Socket 
-    socket.onopen = function(event) {
-        console.log('已连接成功');
-        // 发送一个初始化消息
-        socket.send('我是HTML客户端'); 
+<!DOCTYPE html>
+<html>
 
-        // 监听消息
-        socket.onmessage = function(event) { 
-          console.log(event.data); 
-        }; 
+<head>
+    <meta charset="utf-8">
+    <title>Socket.io - Simple chat</title>
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/socket.io.js"></script>
+    <script src="./js/main.js"></script>
+</head>
 
-        // 监听Socket的关闭
-        socket.onclose = function(event) { 
-          console.log('已断开连接'); 
-        }; 
+<body>
+    <h1>Socket.io - Simple chat room</h1>
+    <div>
+        <span id="status">Connecting...</span>
+        <input type="text" id="input" />
+    </div>
+    <div id="content"></div>
+</body>
 
-        // 关闭Socket.... 
-        //socket.close(); 
-    };
-    socket.onerror = function(event) {
-        console.log('WebSocketError!');
-    };
-};
-</script>
-<div id="msg"></div>
+</html>

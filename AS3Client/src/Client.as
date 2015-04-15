@@ -91,7 +91,8 @@ package {
 							break;
 						case "system":
 							if (data.type === "welcome") {
-								_uName.text = data.text;
+								if(_uName.text == "Choose a name:")
+									_uName.text = data.text;
 								_uName.textColor = data.color;
 								p = "system @ " + data.time + " : Welcome " + data.text + "\n";
 							} else if (data.type == "disconnect") {

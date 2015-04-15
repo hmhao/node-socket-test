@@ -1,2 +1,3 @@
 # node-socket-test
-nodejs socket and websocket
+socket.io chat for Html Client, Nodejs Client, Flash Client
+
