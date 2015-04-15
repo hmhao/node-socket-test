@@ -9,7 +9,6 @@ package io.socket.flash
 
 		public function SocketIOTransportFactory()
 		{
-			_transpors[XhrPollingTransport.TRANSPORT_TYPE] = XhrPollingTransport;
 			_transpors[WebsocketTransport.TRANSPORT_TYPE] = WebsocketTransport;
 		}
 

@@ -76,7 +76,7 @@ package io.socket.flash
                 wsPrefix = "ws";
             }
 
-			var wsHostname:String =  wsPrefix + "://" + _simpeHostname + "/" + PROTOCOL_VERSION + "/" + TRANSPORT_TYPE + "/" + sessionId;
+			var wsHostname:String =  wsPrefix + "://" + _simpeHostname + "/?EIO=" + EIO + "&transport=" + TRANSPORT_TYPE + "&sid=" + sessionId;
 			_status = CONNECTING;
 			_webSocket = new WebSocket(0, wsHostname, [], _origin , null, 0, _cookie, null, this);
 			_webSocket.addEventListener(WebSocketEvent.OPEN, onWebSocketOpen);

@@ -6,7 +6,6 @@ package {
 	import io.socket.flash.SocketIOEvent;
 	import io.socket.flash.SocketIOTransportFactory;
 	import io.socket.flash.WebsocketTransport;
-	import io.socket.flash.XhrPollingTransport;
 	
 	import flash.display.Sprite;
 	

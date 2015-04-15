@@ -7,15 +7,17 @@ package io.socket.flash
 	import flash.events.IOErrorEvent;
 	import flash.events.SecurityErrorEvent;
 	import flash.net.URLLoader;
+	import flash.net.URLLoaderDataFormat;
 	import flash.net.URLRequest;
 	import flash.utils.unescapeMultiByte;
+	import flash.utils.ByteArray;
 
 	public class BaseSocketIOTransport extends EventDispatcher implements ISocketIOTransport
 	{
         protected var _hostname:String;
 		public static const FRAME:String = "\ufffd";
 		public static const SEPARATOR:String = ":";
-		public static const PROTOCOL_VERSION:String = "1";
+		public static const EIO:String = "3";
 		private var _connectLoader:URLLoader;
 		protected var _sessionId:String;
 
@@ -46,21 +48,47 @@ package io.socket.flash
 		public function connect():void
 		{
 			var urlLoader:URLLoader = new URLLoader();
-			var urlRequest:URLRequest = new URLRequest(hostname + "/" + PROTOCOL_VERSION + "/?t=" + currentMills());
+			var urlRequest:URLRequest = new URLRequest(hostname + "/?EIO=" + EIO + "&transport=polling&t=" + currentMills());
 			urlLoader.addEventListener(Event.COMPLETE, onConnectedComplete);
 			urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onConnectIoErrorEvent);
 			urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onConnectSecurityError);
 			_connectLoader = urlLoader;
+			urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
 			urlLoader.load(urlRequest);
+		}
+		
+		private function decodePayloadAsBinary(byteArray:ByteArray):String {
+			var ba:ByteArray = byteArray;
+			var isString:Boolean = ba[0] === 0;
+			var dataLength:String = '';
+			var data:String = '';
+			var byte:int;
+			
+			ba.position = 1;
+			while (ba.bytesAvailable > 0) {
+				byte = ba.readUnsignedByte();
+				if (byte == 255)
+					break;
+				dataLength += byte;
+			}
+			var dataBytes:ByteArray = new ByteArray();
+			dataBytes.writeBytes(ba, 2 + dataLength.length);
+			if (isString) {
+				dataBytes.position = 0;
+				while (dataBytes.bytesAvailable > 0) {
+					data += String.fromCharCode(dataBytes.readUnsignedByte());
+				}
+			}
+			return data;
 		}
 
 		private function onConnectedComplete(event:Event):void
 		{
-			var urlLoader:URLLoader = event.target as URLLoader;
-			var data:String = urlLoader.data;
-			var handShake:Array = data.split(":");
-
-			_sessionId = handShake[0];
+			var data:String = decodePayloadAsBinary(_connectLoader.data);
+			data = data.substring(1);
+			var json:Object = JSON.decode(data);
+			
+			_sessionId = json.sid;
 			_connectLoader.close();
 			_connectLoader = null;
 			if (_sessionId == null)
