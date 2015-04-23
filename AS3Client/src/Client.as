@@ -1,6 +1,4 @@
 package {
-	import com.adobe.serialization.json.JSON;
-	
 	import flash.display.Sprite;
 	import flash.text.TextField;
 	import flash.text.TextFieldType;
@@ -8,14 +6,11 @@ package {
 	import flash.events.KeyboardEvent;
 	
 	import io.socket.flash.ISocketIOTransport;
-	import io.socket.flash.ISocketIOTransportFactory;
 	import io.socket.flash.SocketIOErrorEvent;
 	import io.socket.flash.SocketIOEvent;
-	import io.socket.flash.SocketIOTransportFactory;
 	import io.socket.flash.WebsocketTransport;
 	
 	public class Client extends Sprite {
-		private var _socketIOTransportFactory:ISocketIOTransportFactory = new SocketIOTransportFactory();
 		private var _ioSocket:ISocketIOTransport;
 		
 		private var _uName:TextField;
@@ -59,7 +54,7 @@ package {
 		}
 		
 		private function initSocketIO():void {
-			_ioSocket = _socketIOTransportFactory.createSocketIOTransport(WebsocketTransport.TRANSPORT_TYPE, "localhost:3000/socket.io", this);
+			_ioSocket = new WebsocketTransport("localhost:3000/socket.io");
 			_ioSocket.addEventListener(SocketIOEvent.CONNECT, onSocketConnected);
 			_ioSocket.addEventListener(SocketIOEvent.DISCONNECT, onSocketDisconnected);
 			_ioSocket.addEventListener(SocketIOEvent.MESSAGE, onSocketMessage);

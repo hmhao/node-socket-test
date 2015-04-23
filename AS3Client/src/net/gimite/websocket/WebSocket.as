@@ -7,10 +7,6 @@ package net.gimite.websocket {
 
 import com.adobe.net.proxies.RFC2817Socket;
 import com.gsolo.encryption.SHA1;
-import com.hurlant.crypto.tls.TLSConfig;
-import com.hurlant.crypto.tls.TLSEngine;
-import com.hurlant.crypto.tls.TLSSecurityParameters;
-import com.hurlant.crypto.tls.TLSSocket;
 
 import flash.display.*;
 import flash.errors.*;
@@ -58,8 +54,6 @@ public class WebSocket extends EventDispatcher {
   private var headers:String;
   
   private var rawSocket:Socket;
-  private var tlsSocket:TLSSocket;
-  private var tlsConfig:TLSConfig;
   private var socket:Socket;
   
   private var acceptedProtocol:String;
@@ -106,19 +100,8 @@ public class WebSocket extends EventDispatcher {
       rawSocket = socket = proxySocket;
     } else {
       rawSocket = new Socket();
-      if (scheme == "wss") {
-        tlsConfig= new TLSConfig(TLSEngine.CLIENT,
-            null, null, null, null, null,
-            TLSSecurityParameters.PROTOCOL_VERSION);
-        tlsConfig.trustAllCertificates = true;
-        tlsConfig.ignoreCommonNameMismatch = true;
-        tlsSocket = new TLSSocket();
-        tlsSocket.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
-        socket = tlsSocket;
-      } else {
-        rawSocket.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
-        socket = rawSocket;
-      }
+      rawSocket.addEventListener(ProgressEvent.SOCKET_DATA, onSocketData);
+      socket = rawSocket;
     }
     rawSocket.addEventListener(Event.CLOSE, onSocketClose);
     rawSocket.addEventListener(Event.CONNECT, onSocketConnect);
@@ -220,8 +203,7 @@ public class WebSocket extends EventDispatcher {
     logger.log("connected");
 
     if (scheme == "wss") {
-      logger.log("starting SSL/TLS");
-      tlsSocket.startTLS(rawSocket, host, tlsConfig);
+	  fatal("wss with proxy is not supported");
     }
     
     var defaultPort:int = scheme == "wss" ? 443 : 80;

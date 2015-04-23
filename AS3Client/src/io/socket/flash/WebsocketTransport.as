@@ -1,7 +1,6 @@
 package io.socket.flash {
 	import com.adobe.serialization.json.JSON;
 	
-	import flash.display.DisplayObject;
 	import flash.external.ExternalInterface;
 	
 	import net.gimite.websocket.IWebSocketLogger;
@@ -14,7 +13,6 @@ package io.socket.flash {
 		private static var CONNECTED:int = 1;
 		private static var DISCONNECTED:int = 2;
 		
-		private var _displayObject:DisplayObject;
 		private var _webSocket:WebSocket;
 		private var _origin:String;
 		private var _cookie:String;
@@ -22,7 +20,7 @@ package io.socket.flash {
 		private var _simpeHostname:String;
 		private var _isSecure:Boolean;
 		
-		public function WebsocketTransport(hostname:String, displayObject:DisplayObject, isSecure:Boolean = false) {
+		public function WebsocketTransport(hostname:String, isSecure:Boolean = false) {
 			super();
 			_isSecure = isSecure;
 			if (isSecure) {
@@ -36,7 +34,6 @@ package io.socket.flash {
 			} else {
 				_origin = "http://" + hostname + "/";
 			}
-			_displayObject = displayObject;
 			if (ExternalInterface.available) {
 				try {
 					_cookie = ExternalInterface.call("function(){return document.cookie}");
@@ -64,7 +61,7 @@ package io.socket.flash {
 				wsPrefix = "ws";
 			}
 			
-			var wsHostname:String = wsPrefix + "://" + _simpeHostname + "/?EIO=" + EIO + "&transport=" + TRANSPORT_TYPE + "&sid=" + sessionId;
+			var wsHostname:String = wsPrefix + "://" + _simpeHostname + "/?transport=" + TRANSPORT_TYPE + "&sid=" + sessionId;
 			_status = CONNECTING;
 			_webSocket = new WebSocket(0, wsHostname, [], _origin, null, 0, _cookie, null, this);
 			_webSocket.addEventListener(WebSocketEvent.OPEN, onWebSocketOpen);
@@ -82,8 +79,6 @@ package io.socket.flash {
 		
 		private function onWebSocketOpen(event:WebSocketEvent):void {
 			_status = CONNECTED;
-			/*var connectEvent:SocketIOEvent = new SocketIOEvent(SocketIOEvent.CONNECT);
-			 dispatchEvent(connectEvent);*/
 			fireProbe();
 		}
 		

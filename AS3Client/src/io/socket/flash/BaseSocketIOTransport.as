@@ -15,7 +15,6 @@ package io.socket.flash {
 		protected var _hostname:String;
 		public static const FRAME:String = "\ufffd";
 		public static const SEPARATOR:String = ":";
-		public static const EIO:String = "3";
 		private var _connectLoader:URLLoader;
 		protected var _sessionId:String;
 		
@@ -40,7 +39,7 @@ package io.socket.flash {
 		
 		public function connect():void {
 			var urlLoader:URLLoader = new URLLoader();
-			var urlRequest:URLRequest = new URLRequest(hostname + "/?EIO=" + EIO + "&transport=polling&t=" + currentMills());
+			var urlRequest:URLRequest = new URLRequest(hostname + "/?transport=polling&t=" + currentMills());
 			urlLoader.addEventListener(Event.COMPLETE, onConnectedComplete);
 			urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onConnectIoErrorEvent);
 			urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onConnectSecurityError);
