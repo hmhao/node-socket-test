@@ -4,13 +4,14 @@ package {
 	import flash.text.TextFieldType;
 	import flash.text.TextFieldAutoSize;
 	import flash.events.KeyboardEvent;
+	import io.socket.flash.ISocketIOLogger;
 	
 	import io.socket.flash.ISocketIOTransport;
 	import io.socket.flash.SocketIOErrorEvent;
 	import io.socket.flash.SocketIOEvent;
 	import io.socket.flash.WebsocketTransport;
 	
-	public class Client extends Sprite {
+	public class Client extends Sprite implements ISocketIOLogger{
 		private var _ioSocket:ISocketIOTransport;
 		
 		private var _uName:TextField;
@@ -54,7 +55,7 @@ package {
 		}
 		
 		private function initSocketIO():void {
-			_ioSocket = new WebsocketTransport("localhost:3000/socket.io");
+			_ioSocket = new WebsocketTransport("localhost:3000/socket.io", this);
 			_ioSocket.addEventListener(SocketIOEvent.CONNECT, onSocketConnected);
 			_ioSocket.addEventListener(SocketIOEvent.DISCONNECT, onSocketDisconnected);
 			_ioSocket.addEventListener(SocketIOEvent.MESSAGE, onSocketMessage);
@@ -64,16 +65,16 @@ package {
 		}
 		
 		private function onSocketConnectionFault(event:SocketIOErrorEvent):void {
-			logMessage(event.type + ":" + event.text);
+			log(event.type + ":" + event.text);
 		}
 		
 		private function onSocketSecurityFault(event:SocketIOErrorEvent):void {
-			logMessage(event.type + ":" + event.text);
+			log(event.type + ":" + event.text);
 		}
 		
 		private function onSocketMessage(event:SocketIOEvent):void {
 			if (event.message is String) {
-				logMessage(String(event.message));
+				log(String(event.message));
 			} else {
 				if (event.message is Array) {
 					var msg:Array = event.message as Array,
@@ -105,14 +106,17 @@ package {
 		}
 		
 		private function onSocketConnected(event:SocketIOEvent):void {
-			logMessage("Connected" + event.target);
+			log("Connected" + event.target);
 		}
 		
 		private function onSocketDisconnected(event:SocketIOEvent):void {
-			logMessage("Disconnected" + event.target);
+			log("Disconnected" + event.target);
 		}
 		
-		private function logMessage(message:String):void {
+		public function log(message:String):void {
+			trace(message);
+		}
+		public function error(message:String):void {
 			trace(message);
 		}
 	}

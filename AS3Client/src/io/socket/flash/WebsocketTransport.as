@@ -20,8 +20,8 @@ package io.socket.flash {
 		private var _simpeHostname:String;
 		private var _isSecure:Boolean;
 		
-		public function WebsocketTransport(hostname:String, isSecure:Boolean = false) {
-			super();
+		public function WebsocketTransport(hostname:String, logger:ISocketIOLogger, isSecure:Boolean = false) {
+			super(hostname, logger);
 			_isSecure = isSecure;
 			if (isSecure) {
 				_hostname = "https://" + hostname;
@@ -38,7 +38,7 @@ package io.socket.flash {
 				try {
 					_cookie = ExternalInterface.call("function(){return document.cookie}");
 				} catch (e:Error) {
-					trace(e);
+					_logger.log(e.message);
 					_cookie = "";
 				}
 			} else {
@@ -132,11 +132,11 @@ package io.socket.flash {
 		}
 		
 		public function log(message:String):void {
-			trace(message);
+			_logger.log(this + message);
 		}
 		
 		public function error(message:String):void {
-			trace(message);
+			_logger.log(this + message);
 		}
 	}
 }

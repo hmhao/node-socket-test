@@ -15,6 +15,7 @@ package io.socket.flash {
 	
 	public class BaseSocketIOTransport extends EventDispatcher implements ISocketIOTransport {
 		protected var _hostname:String;
+		protected var _logger:ISocketIOLogger;
 		public static const FRAME:String = "\ufffd";
 		public static const SEPARATOR:String = ":";
 		private var _connectLoader:URLLoader;
@@ -24,8 +25,9 @@ package io.socket.flash {
 		protected var _pingIntervalTimer:Timer;
 		protected var _pingTimeoutTimer:Timer;
 		
-		public function BaseSocketIOTransport(hostname:String = "") {
-			_hostname = hostname;
+		public function BaseSocketIOTransport(hostname:String, logger:ISocketIOLogger) {
+			_hostname = hostname || "";
+			_logger = logger;
 		}
 		
 		public function get sessionId():String {
@@ -143,7 +145,7 @@ package io.socket.flash {
 		
 		protected function onPingInterval(event:TimerEvent):void {
 			sendPing();
-			trace('writing ping packet - expecting pong within ' + _pingTimeout);
+			_logger.log('writing ping packet - expecting pong within ' + _pingTimeout);
 			onHeartbeat();
 		}
 		
@@ -153,7 +155,7 @@ package io.socket.flash {
 		}
 		
 		protected function onPingTimeout(event:TimerEvent):void {
-			trace("ping timeout");
+			_logger.log("ping timeout");
 			disconnect();
 		}
 		
@@ -161,6 +163,7 @@ package io.socket.flash {
 			// Socket is live - any packet counts
 			onHeartbeat();
 			for each (var message:String in messages) {
+				_logger.log("receive: " + message);
 				var type:String = message.charAt(0);
 				var index:int = 1;
 				var data:String = message.substr(index, message.length);
@@ -196,7 +199,7 @@ package io.socket.flash {
 		}
 		
 		protected function sendPing():void {
-			trace("sendPing");
+			_logger.log("sendPing");
 			sendPacket(new Packet(Packet.PING_TYPE, ""));
 		}
 		
@@ -204,7 +207,7 @@ package io.socket.flash {
 			if (data === "probe") {
 				sendPacket(new Packet(Packet.UPGRADE_TYPE, ""));
 			}else {
-				trace("receivePong");
+				_logger.log("receivePong");
 			}
 		}
 		
