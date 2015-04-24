@@ -72,6 +72,7 @@ package io.socket.flash {
 		}
 		
 		public override function disconnect():void {
+			super.disconnect();
 			if (_status == CONNECTED || _status == CONNECTING) {
 				_webSocket.close();
 			}
@@ -79,7 +80,8 @@ package io.socket.flash {
 		
 		private function onWebSocketOpen(event:WebSocketEvent):void {
 			_status = CONNECTED;
-			fireProbe();
+			setPing();
+			sendProbe();
 		}
 		
 		private function onWebSocketClose(event:WebSocketEvent):void {

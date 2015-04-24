@@ -5,9 +5,11 @@ package io.socket.flash {
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
 	import flash.events.SecurityErrorEvent;
+	import flash.events.TimerEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLLoaderDataFormat;
 	import flash.net.URLRequest;
+	import flash.utils.Timer;
 	import flash.utils.unescapeMultiByte;
 	import flash.utils.ByteArray;
 	
@@ -17,6 +19,10 @@ package io.socket.flash {
 		public static const SEPARATOR:String = ":";
 		private var _connectLoader:URLLoader;
 		protected var _sessionId:String;
+		protected var _pingInterval:int;
+		protected var _pingTimeout:int;
+		protected var _pingIntervalTimer:Timer;
+		protected var _pingTimeoutTimer:Timer;
 		
 		public function BaseSocketIOTransport(hostname:String = "") {
 			_hostname = hostname;
@@ -79,6 +85,8 @@ package io.socket.flash {
 			var json:Object = JSON.decode(data);
 			
 			_sessionId = json.sid;
+			_pingInterval = json.pingInterval;
+			_pingTimeout = json.pingTimeout;
 			_connectLoader.close();
 			_connectLoader = null;
 			if (_sessionId == null) {
@@ -91,7 +99,7 @@ package io.socket.flash {
 		}
 		
 		protected function onSessionIdRecevied(sessionId:String):void {
-		
+			
 		}
 		
 		private function onConnectSecurityError(event:SecurityErrorEvent):void {
@@ -111,9 +119,47 @@ package io.socket.flash {
 		}
 		
 		public function disconnect():void {
+			if(_pingIntervalTimer){
+				_pingIntervalTimer.reset();
+				_pingIntervalTimer.removeEventListener(TimerEvent.TIMER, onPingInterval);
+				_pingIntervalTimer = null;
+			}
+			
+			if(_pingTimeoutTimer){
+				_pingTimeoutTimer.reset();
+				_pingTimeoutTimer.removeEventListener(TimerEvent.TIMER, onPingInterval);
+				_pingTimeoutTimer = null;
+			}
+		}
+		
+		protected function setPing():void {
+			_pingIntervalTimer = new Timer(_pingInterval);
+			_pingIntervalTimer.addEventListener(TimerEvent.TIMER, onPingInterval);
+			_pingTimeoutTimer = new Timer(_pingTimeout);
+			_pingTimeoutTimer.addEventListener(TimerEvent.TIMER, onPingTimeout);
+			
+			_pingIntervalTimer.start();
+		}
+		
+		protected function onPingInterval(event:TimerEvent):void {
+			sendPing();
+			trace('writing ping packet - expecting pong within ' + _pingTimeout);
+			onHeartbeat();
+		}
+		
+		protected function onHeartbeat():void {
+			_pingTimeoutTimer.reset();
+			_pingTimeoutTimer.start();
+		}
+		
+		protected function onPingTimeout(event:TimerEvent):void {
+			trace("ping timeout");
+			disconnect();
 		}
 		
 		public function processMessages(messages:Array):void {
+			// Socket is live - any packet counts
+			onHeartbeat();
 			for each (var message:String in messages) {
 				var type:String = message.charAt(0);
 				var index:int = 1;
@@ -123,10 +169,10 @@ package io.socket.flash {
 						fireConnected();
 						break;
 					case Packet.PING_TYPE: 
-						firePing();
+						sendPing();
 						break;
 					case Packet.PONG_TYPE: 
-						firePong(data);
+						receivePong(data);
 						break;
 					case Packet.MESSAGE_TYPE: 
 						fireMessageEvent(data);
@@ -145,17 +191,20 @@ package io.socket.flash {
 			dispatchEvent(new SocketIOEvent(SocketIOEvent.CONNECT));
 		}
 		
-		protected function fireProbe():void {
+		protected function sendProbe():void {
 			sendPacket(new Packet(Packet.PING_TYPE, "probe"));
 		}
 		
-		protected function firePing():void {
+		protected function sendPing():void {
+			trace("sendPing");
 			sendPacket(new Packet(Packet.PING_TYPE, ""));
 		}
 		
-		protected function firePong(data:String):void {
+		protected function receivePong(data:String):void {
 			if (data === "probe") {
 				sendPacket(new Packet(Packet.UPGRADE_TYPE, ""));
+			}else {
+				trace("receivePong");
 			}
 		}
 		
