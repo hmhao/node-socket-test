@@ -150,8 +150,10 @@ package io.socket.flash {
 		}
 		
 		protected function onHeartbeat():void {
-			_pingTimeoutTimer.reset();
-			_pingTimeoutTimer.start();
+			if(_pingTimeoutTimer){
+				_pingTimeoutTimer.reset();
+				_pingTimeoutTimer.start();
+			}
 		}
 		
 		protected function onPingTimeout(event:TimerEvent):void {
